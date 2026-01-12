@@ -1,9 +1,10 @@
 package gr.hua.dit.noc.core.impl;
 
-import gr.hua.dit.noc.config.RouteeProperties;
+import gr.hua.dit.noc.config.RouteeSmsProperties;
 import gr.hua.dit.noc.core.EmailService;
 import gr.hua.dit.noc.core.model.SendEmailRequest;
 import gr.hua.dit.noc.core.model.SendEmailResult;
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.Cacheable;
@@ -21,81 +22,79 @@ public class RouteeEmailService implements EmailService {
     private static final Logger LOGGER = LoggerFactory.getLogger(RouteeEmailService.class);
 
     private static final String AUTHENTICATION_URL = "https://auth.routee.net/oauth/token";
-    private static final String EMAIL_URL = "https://connect.routee.net/email";
+    private static final String EMAIL_URL = "https://connect.routee.net/email/send";
 
     private final RestTemplate restTemplate;
-    private final RouteeProperties routeeProperties;
+    private final RouteeSmsProperties routeeProperties;
 
-    public RouteeEmailService(RestTemplate restTemplate,
-                              RouteeProperties routeeProperties) {
+    public RouteeEmailService(final RestTemplate restTemplate, final RouteeSmsProperties routeeProperties) {
+        if (restTemplate == null) throw new NullPointerException();
+        if (routeeProperties == null) throw new NullPointerException();
+
         this.restTemplate = restTemplate;
         this.routeeProperties = routeeProperties;
     }
 
-    // 🔐 ίδιο ακριβώς με SmsService
+
     @SuppressWarnings("rawtypes")
     @Cacheable("routeeAccessToken")
     public String getAccessToken() {
-        LOGGER.info("Requesting Routee Access Token (EMAIL)");
+        LOGGER.info("Requesting Routee Access Token");
 
-        final String credentials =
-                routeeProperties.getAppId() + ":" + routeeProperties.getAppSecret();
+        final String credentials = routeeProperties.getAppId() + ":" + routeeProperties.getAppSecret();
 
-        final String encoded =
-                Base64.getEncoder()
-                        .encodeToString(credentials.getBytes(StandardCharsets.UTF_8));
+        final String encoded = Base64.getEncoder().encodeToString(credentials.getBytes(StandardCharsets.UTF_8));
 
-        final HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", "Basic " + encoded);
-        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+        final HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.set("Authorization", "Basic " + encoded);
+        httpHeaders.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
-        final HttpEntity<String> request =
-                new HttpEntity<>("grant_type=client_credentials", headers);
+        final HttpEntity<String> request = new HttpEntity<>("grant_type=client_credentials", httpHeaders);
 
         final ResponseEntity<Map> response =
-                restTemplate.exchange(
-                        AUTHENTICATION_URL,
-                        HttpMethod.POST,
-                        request,
-                        Map.class
-                );
+                this.restTemplate.exchange(AUTHENTICATION_URL, HttpMethod.POST, request, Map.class);
 
         return (String) response.getBody().get("access_token");
     }
 
     @Override
-    public boolean sendEmail(String to, String subject, String content) {
+    public SendEmailResult send(@Valid final SendEmailRequest sendEmailRequest) {
+        if (sendEmailRequest == null) throw new NullPointerException();
 
-        final String token = getAccessToken();
+        final String to = sendEmailRequest.to();
+        final String subject = sendEmailRequest.subject();
+        final String content = sendEmailRequest.content();
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(token);
-        headers.setContentType(MediaType.APPLICATION_JSON);
+        if (to == null) throw new NullPointerException();
+        if (to.isBlank()) throw new IllegalArgumentException();
+        if (subject == null) throw new NullPointerException();
+        if (subject.isBlank()) throw new IllegalArgumentException();
+        if (content == null) throw new NullPointerException();
+        if (content.isBlank()) throw new IllegalArgumentException();
 
-        SendEmailRequest body = new SendEmailRequest(
-                to,
-                subject,
-                content,
-                routeeProperties.getSender()
-        );
+        final String token = this.getAccessToken();
 
-        HttpEntity<SendEmailRequest> entity =
-                new HttpEntity<>(body, headers);
+        final HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.set("Authorization", "Bearer " + token);
+        httpHeaders.setContentType(MediaType.APPLICATION_JSON);
 
-        ResponseEntity<String> response =
-                restTemplate.postForEntity(
-                        EMAIL_URL,
-                        entity,
-                        String.class
-                );
+        final Map<String, Object> body = Map.of(
+                "subject", subject,
+                "body", content,
+                "to", to,
+                "from", this.routeeProperties.getSender());
 
-        LOGGER.info("Routee EMAIL response: {}", response);
+        final HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, httpHeaders);
+
+        final ResponseEntity<String> response = this.restTemplate.postForEntity(EMAIL_URL, entity, String.class);
+
+        LOGGER.info("Routee response: {}", response);
 
         if (!response.getStatusCode().is2xxSuccessful()) {
             LOGGER.error("Email send to {} failed", to);
-            return false;
+            return new SendEmailResult(false);
         }
 
-        return true;
+        return new SendEmailResult(true);
     }
 }

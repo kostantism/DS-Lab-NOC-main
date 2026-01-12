@@ -1,6 +1,9 @@
 package gr.hua.dit.noc.core;
 
+import gr.hua.dit.noc.core.model.SendEmailRequest;
+import gr.hua.dit.noc.core.model.SendEmailResult;
+
 public interface EmailService {
-    boolean sendEmail(String to, String subject, String content);
+    SendEmailResult send(final SendEmailRequest sendEmailRequest);
 }
 

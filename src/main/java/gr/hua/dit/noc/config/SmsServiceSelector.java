@@ -20,14 +20,14 @@ public class SmsServiceSelector {
     private static final Logger LOGGER = LoggerFactory.getLogger(SmsServiceSelector.class);
 
     @Bean
-    public SmsService smsService(final RouteeProperties routeeProperties,
+    public SmsService smsService(final RouteeSmsProperties RouteeSmsProperties,
                                  final RouteeSmsService routeeSmsService,
                                  final MockSmsService mockSmsService) {
-        if (routeeProperties == null) throw new NullPointerException();
+        if (RouteeSmsProperties == null) throw new NullPointerException();
         if (routeeSmsService == null) throw new NullPointerException();
         if (mockSmsService == null) throw new NullPointerException();
 
-        if (StringUtils.hasText(routeeProperties.getAppId()) && StringUtils.hasText(routeeProperties.getAppSecret())) {
+        if (StringUtils.hasText(RouteeSmsProperties.getAppId()) && StringUtils.hasText(RouteeSmsProperties.getAppSecret())) {
             LOGGER.info("RouteeSmsService is the default implementation of SmsService");
             return routeeSmsService;
         } else {

@@ -1,6 +1,6 @@
 package gr.hua.dit.noc.core.impl;
 
-import gr.hua.dit.noc.config.RouteeProperties;
+import gr.hua.dit.noc.config.RouteeSmsProperties;
 import gr.hua.dit.noc.core.SmsService;
 import gr.hua.dit.noc.core.model.SendSmsRequest;
 import gr.hua.dit.noc.core.model.SendSmsResult;
@@ -30,9 +30,9 @@ public class RouteeSmsService implements SmsService {
     private static final String SMS_URL = "https://connect.routee.net/sms";
 
     private final RestTemplate restTemplate;
-    private final RouteeProperties routeeProperties;
+    private final RouteeSmsProperties routeeProperties;
 
-    public RouteeSmsService(final RestTemplate restTemplate, final RouteeProperties routeeProperties) {
+    public RouteeSmsService(final RestTemplate restTemplate, final RouteeSmsProperties routeeProperties) {
         if (restTemplate == null) throw new NullPointerException();
         if (routeeProperties == null) throw new NullPointerException();
 

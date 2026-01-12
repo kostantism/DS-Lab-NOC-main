@@ -6,11 +6,10 @@ import org.springframework.context.annotation.Configuration;
 /**
  * Routee Properties. (see application.yaml)
  *
- * @author Dimitris Gkoulis
  */
 @Configuration
-@ConfigurationProperties(prefix = "routee")
-public class RouteeProperties {
+@ConfigurationProperties(prefix = "routee.sms")
+public class RouteeSmsProperties {
 
     private String appId;
     private String appSecret;
