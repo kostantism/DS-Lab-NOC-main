@@ -25,4 +25,4 @@ email:
   provider: sendgrid
   sendgrid:
     api-key: ${SENDGRID_API_KEY}
-    from: smavraganiskostantis@gmail.gr
+    from: smavraganiskostantis@gmail.com
