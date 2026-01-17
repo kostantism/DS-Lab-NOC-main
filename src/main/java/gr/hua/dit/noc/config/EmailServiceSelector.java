@@ -2,13 +2,11 @@ package gr.hua.dit.noc.config;
 
 import gr.hua.dit.noc.core.EmailService;
 import gr.hua.dit.noc.core.impl.MockEmailService;
-//import gr.hua.dit.noc.core.impl.RouteeEmailService;
 import gr.hua.dit.noc.core.impl.SendGridEmailService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.util.StringUtils;
 
 @Configuration
 public class EmailServiceSelector {
